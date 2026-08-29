@@ -1,13 +1,20 @@
+"""
+CashCow Command Center
+Branch Model - Physical sites housing ATM pools
+"""
+
+from __future__ import annotations # postpone type evaluations until runtime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String
+from decimal import Decimal
+
+from sqlalchemy import ForeignKey, String, Integer, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
 if TYPE_CHECKING:
-    from .user import User
-    from .atm import ATMsourc
+    from .atm import ATM
 
 
 class Branch(Base):
@@ -25,31 +32,21 @@ class Branch(Base):
         nullable=False
     )
 
-    capacity: Mapped[int] = mapped_column(
+    capacity: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2),
         nullable=False
     )
 
     supervisor_id: Mapped[int | None] = mapped_column(
+        Integer,
         ForeignKey("users.id"),
         nullable=True
     )
 
-    # Regional Operations Supervisor
-    supervisor: Mapped["User | None"] = relationship(
-        "User",
-        foreign_keys=[supervisor_id],
-        back_populates="supervised_branches"
-    )
-
-    # Users assigned to this branch
-    technicians: Mapped[list["User"]] = relationship(
-        "User",
-        foreign_keys="User.branch_id",
-        back_populates="branch"
-    )
-
     # ATMs physically located at this branch
-    atms: Mapped[list["ATM"]] = relationship(
-        "ATM",
-        back_populates="branch"
-    )
+    atms: Mapped[list["ATM"]] = relationship(back_populates="branch")
+
+    def __repr__(self) -> str:
+        return (f" Branch(id={self.id}, "
+                f"name={self.name!r}, "
+                f"location_region={self.location_region!r})")
