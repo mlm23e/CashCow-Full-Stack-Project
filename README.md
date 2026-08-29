@@ -17,7 +17,8 @@ Branch operations leadership cannot easily answer crucial operational questions,
 
 The new system must allow operations admins and field technicians to easily answer the following analytical questions:
 
-* **Low Cash Alert:** *Which active ATMs are operating below a 20% cash reserve across all branches?* (This is satisfied in backend/models/atm.py by the ATM class method is_low_on_cash().)
+* **Low Cash Alert:** *Which active ATMs are operating below a 20% cash reserve across all branches?* 
+(This is satisfied in backend/models/atm.py by the ATM class method is_low_on_cash().)
 * **Co-Location Discrepancy:** *How many ATMs are assigned to field technicians who are NOT co-located at the same physical branch?*
 * **Reliability Metrics:** *What is the service call completion/failure ratio broken down by ATM model?*
 * **Maintenance Flags:** *Which branches have more than 30% of their ATMs currently flagged for maintenance?*
