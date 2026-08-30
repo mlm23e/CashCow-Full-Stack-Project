@@ -16,11 +16,26 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 class DiagnosticReport(Base):
     id : Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    file_url : Mapped[str] = mapped_column(Text)
+    service_call_id : Mapped[int] = mapped_column(
+        Integer, 
+        ForeignKey("service_calls.id"), 
+        nullable=False
+    )
 
-    notes : Mapped[str] = mapped_column(Text, nullable=True)
+    file_url : Mapped[str] = mapped_column(
+        Text, 
+        nullable=False
+    )
 
-    created_at : Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    notes : Mapped[str] = mapped_column(
+        Text, 
+        nullable=True
+    )
+
+    created_at : Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=datetime.now()
+    )
 
     service : Mapped["ServiceCall"] = relationship(back_populates="service_calls")
 

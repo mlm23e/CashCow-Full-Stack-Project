@@ -23,5 +23,6 @@ class ServiceStatus(str, Enum):
 # User Role
 class UserRole(str, Enum):
     OPERATIONS_ADMIN = "Operations Admin"
+    SUPERVISOR = "Regional Supervisor"
     TECHNICIAN = "Technician"
     AUDITOR = "Auditor"

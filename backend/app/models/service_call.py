@@ -20,16 +20,23 @@ if TYPE_CHECKING:
 class ServiceCall(Base):
     __tablename__ = "service_calls"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        Integer, 
+        primary_key=True
+    )
 
-    title: Mapped[str] = mapped_column(String(255))
+    title: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
 
     priority: Mapped[ServicePriority] = mapped_column(
         SQLEnum(
             ServicePriority, 
             name = "service_priority",
             values_callable = lambda enum_cls : [member.value for member in enum_cls]
-        )
+        ),
+        nullable=False
     )
 
     status: Mapped[ServiceStatus] = mapped_column(
@@ -38,10 +45,15 @@ class ServiceCall(Base):
             name = "service_status",
             values_callable = lambda enum_cls : [member.value for member in enum_cls]
         ),
+        nullable=False,
         default = ServiceStatus.PENDING
     )
 
-    atm_id: Mapped[int] = mapped_column(ForeignKey("atms.id"))
+    atm_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("atms.id"),
+        nullable=False
+    )
 
     technician_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
@@ -56,8 +68,7 @@ class ServiceCall(Base):
 
     # Diagnostic reports attached to call
     diagnostic_reports: Mapped[list["DiagnosticReport"]] = relationship(
-        back_populates="service_call",
-        cascade="all, delete-orphan"
+        back_populates="service_call"
     )
 
     def __repr__(self) -> str:

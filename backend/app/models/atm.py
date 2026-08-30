@@ -7,7 +7,7 @@ from __future__ import annotations # postpone type evaluations until runtime
 from typing import TYPE_CHECKING
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, ForeignKey, Numeric, String, Enum as SQLEnum
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric, String, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base
@@ -28,7 +28,10 @@ class ATM(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        Integer, 
+        primary_key=True
+    )
 
     serial_number: Mapped[str] = mapped_column(
         String(100),
@@ -41,7 +44,7 @@ class ATM(Base):
         nullable=False
     )
 
-    status: Mapped[ATMStatus] = mapped_column(
+    atm_status: Mapped[ATMStatus] = mapped_column(
         SQLEnum(
             ATMStatus,
             name = "atm_status",
@@ -57,6 +60,7 @@ class ATM(Base):
     )
 
     facility_id: Mapped[int] = mapped_column(
+        Integer,
         ForeignKey("branches.id"),
         nullable=False
     )
@@ -68,8 +72,7 @@ class ATM(Base):
 
     # Physical branch
     branch: Mapped["Branch"] = relationship(
-        back_populates="atms", 
-        cascade="all, delete-orphan"
+        back_populates="atms"
     )
 
     LOW_CASH_THRESHOLD = 20

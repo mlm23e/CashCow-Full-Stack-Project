@@ -1,13 +1,24 @@
+-- CashCow Command Center
+
+-- This sets up the schema for the database where we want our data to persist
+
+-- Initialize using:
+--     psql postgres -c "CREATE DATABASE cashcow_dev;"
+--     psql -d cashcow_dev
+-- then run (when inside CashCow-Full-Stack-Project//db/sql):
+--     \i DDL.sql
+
+
 -- ------------------------------------------------------------
 -- ENUM TYPES
 -- ------------------------------------------------------------
 
-CREATE TYPE user_role AS ENUM (
-    'OPERATIONS_ADMIN',
-    'FIELD_TECHNICIAN',
-    'AUDITOR',
-    'REGIONAL_SUPERVISOR'
-);
+-- CREATE TYPE user_role AS ENUM (
+--     'Operations Admin',
+--     'Technician',
+--     'Auditor',
+--     'Regional Supervisor'
+-- );
 
 CREATE TYPE atm_status AS ENUM (
     'Operational',
@@ -16,13 +27,13 @@ CREATE TYPE atm_status AS ENUM (
     'Offline'
 );
 
-CREATE TYPE service_call_priority AS ENUM (
+CREATE TYPE service_priority AS ENUM (
     'Low',
     'Medium',
     'Critical'
 );
 
-CREATE TYPE service_call_status AS ENUM (
+CREATE TYPE service_status AS ENUM (
     'Pending',
     'In-Progress',
     'Completed',
@@ -36,16 +47,12 @@ CREATE TYPE service_call_status AS ENUM (
 
 CREATE TABLE users (
     id              SERIAL PRIMARY KEY,
-    username        VARCHAR(100) NOT NULL UNIQUE,
-    email           VARCHAR(255) NOT NULL UNIQUE,
-    password_hash   TEXT NOT NULL,
+    username        VARCHAR(50) NOT NULL UNIQUE,
+    hashed_password TEXT NOT NULL,
     first_name      VARCHAR(100) NOT NULL,
     last_name       VARCHAR(100) NOT NULL,
     role            user_role NOT NULL,
-    branch_id       INTEGER,
-    is_active       BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+    is_active       BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 
@@ -57,18 +64,8 @@ CREATE TABLE branches (
     id                  SERIAL PRIMARY KEY,
     name                VARCHAR(150) NOT NULL,
     location_region     VARCHAR(100) NOT NULL,
-    capacity            INTEGER NOT NULL,
-    supervisor_id       INTEGER,
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT chk_branch_capacity
-        CHECK (capacity >= 0),
-
-    CONSTRAINT fk_branch_supervisor
-        FOREIGN KEY (supervisor_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL
+    capacity            INTEGER NOT NULL CHECK (capacity >= 0),
+    supervisor_id       INTEGER REFERENCES users(id)
 );
 
 
@@ -92,18 +89,8 @@ CREATE TABLE atms (
     serial_number   VARCHAR(100) NOT NULL UNIQUE,
     model           VARCHAR(100) NOT NULL,
     status          atm_status NOT NULL DEFAULT 'Operational',
-    cash_level      NUMERIC(5,2) NOT NULL DEFAULT 100.00,
-    facility_id     INTEGER NOT NULL,
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT chk_atm_cash_level
-        CHECK (cash_level >= 0 AND cash_level <= 100),
-
-    CONSTRAINT fk_atm_branch
-        FOREIGN KEY (facility_id)
-        REFERENCES branches(id)
-        ON DELETE RESTRICT
+    cash_level      NUMERIC(5,2) NOT NULL DEFAULT 100.00 CHECK (cash_level BETWEEN 0 AND 100),
+    facility_id     INTEGER NOT NULL REFERENCES branches(id)
 );
 
 
@@ -114,27 +101,13 @@ CREATE TABLE atms (
 CREATE TABLE service_calls (
     id              SERIAL PRIMARY KEY,
     title           VARCHAR(255) NOT NULL,
-    priority        service_call_priority NOT NULL DEFAULT 'Medium',
-    status          service_call_status NOT NULL DEFAULT 'Pending',
-    atm_id          INTEGER NOT NULL,
-    technician_id   INTEGER,
+    priority        service_priority NOT NULL,
+    status          service_status NOT NULL DEFAULT 'Pending',
+    atm_id          INTEGER NOT NULL REFERENCES atms(id),
+    technician_id   INTEGER REFERENCES users(id),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
     started_at      TIMESTAMP,
-    completed_at    TIMESTAMP,
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_service_call_atm
-        FOREIGN KEY (atm_id)
-        REFERENCES atms(id)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_service_call_technician
-        FOREIGN KEY (technician_id)
-        REFERENCES users(id)
-        ON DELETE SET NULL,
-
-    CONSTRAINT chk_service_call_dates
-        CHECK (
+    completed_at    TIMESTAMP CHECK (
             completed_at IS NULL
             OR started_at IS NULL
             OR completed_at >= started_at
@@ -148,16 +121,14 @@ CREATE TABLE service_calls (
 
 CREATE TABLE diagnostic_reports (
     id              SERIAL PRIMARY KEY,
-    service_call_id INTEGER NOT NULL,
+    service_call_id INTEGER NOT NULL REFERENCES service_calls(id),
     file_url        TEXT NOT NULL,
     notes           TEXT,
-    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_report_service_call
-        FOREIGN KEY (service_call_id)
-        REFERENCES service_calls(id)
-        ON DELETE CASCADE
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+
+
 
 
 -- ------------------------------------------------------------

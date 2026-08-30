@@ -20,7 +20,10 @@ if TYPE_CHECKING:
 class Branch(Base):
     __tablename__ = "branches"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
 
     name: Mapped[str] = mapped_column(
         String(150),
@@ -32,15 +35,14 @@ class Branch(Base):
         nullable=False
     )
 
-    capacity: Mapped[Decimal] = mapped_column(
-        Numeric(5, 2),
+    capacity: Mapped[int] = mapped_column(
+        Integer,
         nullable=False
     )
 
     supervisor_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("users.id"),
-        nullable=True
+        ForeignKey("users.id")
     )
 
     # ATMs physically located at this branch

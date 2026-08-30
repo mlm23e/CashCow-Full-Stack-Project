@@ -5,7 +5,7 @@ User model -- used for RBAC
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, Boolean, ForeignKey, String, Enum as SQLEnum
+from sqlalchemy import Integer, Boolean, ForeignKey, String, Text, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -27,7 +27,7 @@ class User(Base):
     )
 
     hashed_password: Mapped[str] = mapped_column(
-        String(255),
+        Text,
         nullable=False
     )
 
@@ -46,11 +46,13 @@ class User(Base):
             UserRole,
             name="user_role",
             values_callable=lambda enum_cls : [member.value for member in enum_cls]
-        )
+        ),
+        nullable=False
     )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
+        nullable=False,
         default=True
     )
 
