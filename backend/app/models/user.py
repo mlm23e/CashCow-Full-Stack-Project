@@ -1,33 +1,33 @@
+"""
+CashCow Command Center
+User model -- used for RBAC
+"""
+from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Integer, Boolean, ForeignKey, String, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
-
-if TYPE_CHECKING:
-    from .branch import Branch
-    from .service_call import ServiceCall
-
+from .enums import UserRole
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(
+        Integer, 
+        primary_key=True
+    )
 
     username: Mapped[str] = mapped_column(
-        String(100),
+        String(50),
         unique=True,
+        index=True,
         nullable=False
     )
 
-    email: Mapped[str] = mapped_column(
+    hashed_password: Mapped[str] = mapped_column(
         String(255),
-        unique=True,
-        nullable=False
-    )
-
-    password_hash: Mapped[str] = mapped_column(
         nullable=False
     )
 
@@ -42,38 +42,20 @@ class User(Base):
     )
 
     role: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False
-    )
-
-    branch_id: Mapped[int | None] = mapped_column(
-        ForeignKey("branches.id"),
-        nullable=True
+        SQLEnum(
+            UserRole,
+            name="user_role",
+            values_callable=lambda enum_cls : [member.value for member in enum_cls]
+        )
     )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
-        default=True,
-        nullable=False
+        default=True
     )
 
-    # Technician's assigned/home branch
-    branch: Mapped["Branch | None"] = relationship(
-        "Branch",
-        back_populates="technicians",
-        foreign_keys=[branch_id]
-    )
-
-    supervised_branches: Mapped[list["Branch"]] = relationship(
-    "Branch",
-    foreign_keys="Branch.supervisor_id",
-    back_populates="supervisor"
-    )
-
-    # Service calls assigned to this user
-    service_calls: Mapped[list["ServiceCall"]] = relationship(
-        "ServiceCall",
-        back_populates="technician"
-    )
-
+    def __repr__(self) -> str:
+        return (f"User(id={self.id}, "
+                f"username={self.username!r}, "
+                f"role={self.role.value})")
     

@@ -19,3 +19,9 @@ class ServiceStatus(str, Enum):
     IN_PROGRESS = "In-Progress" 
     COMPLETED = "Completed"
     FAILED = "Failed"
+
+# User Role
+class UserRole(str, Enum):
+    OPERATIONS_ADMIN = "Operations Admin"
+    TECHNICIAN = "Technician"
+    AUDITOR = "Auditor"
