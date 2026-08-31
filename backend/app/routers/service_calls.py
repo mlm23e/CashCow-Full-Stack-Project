@@ -23,7 +23,7 @@ async def list_colocation_discrepancies(
         description="Only return discrepancies for service calls of this priority"
     ),
     db : AsyncSession = Depends(get_db),
-    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN, UserRole.TECHNICIAN))
+    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
 ):
     # Answers business question #2 (find colocation discrepancies between ATM and Technician facility_id)
     statement = (
