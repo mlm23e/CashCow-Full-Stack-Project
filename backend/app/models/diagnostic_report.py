@@ -14,7 +14,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class DiagnosticReport(Base):
-    id : Mapped[int] = mapped_column(Integer, primary_key=True)
+    id : Mapped[int] = mapped_column(
+        Integer, 
+        primary_key=True
+    )
 
     service_call_id : Mapped[int] = mapped_column(
         Integer, 

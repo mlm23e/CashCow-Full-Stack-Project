@@ -59,7 +59,7 @@ class ATM(Base):
         default=100
     )
 
-    facility_id: Mapped[int] = mapped_column(
+    branch_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("branches.id"),
         nullable=False
@@ -87,4 +87,5 @@ class ATM(Base):
                 f"serial_number={self.serial_number!r}, "
                 f"model={self.model!r}, "
                 f"status={self.status.value}, "
-                f"cash_level={self.cash_level})")
+                f"cash_level={self.cash_level}, "
+                f"branch_id={self.branch_id})")

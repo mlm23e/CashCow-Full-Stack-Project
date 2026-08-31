@@ -1,3 +1,8 @@
+"""
+CashCow Command Center
+Pydantic v2 Schema for ATM resource
+"""
+
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field

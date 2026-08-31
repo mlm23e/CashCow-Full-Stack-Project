@@ -56,6 +56,12 @@ class User(Base):
         default=True
     )
 
+    branch_id : Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("branches.id"),
+        nullable=True
+    )
+
     def __repr__(self) -> str:
         return (f"User(id={self.id}, "
                 f"username={self.username!r}, "

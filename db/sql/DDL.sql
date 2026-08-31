@@ -90,7 +90,7 @@ CREATE TABLE atms (
     model           VARCHAR(100) NOT NULL,
     status          atm_status NOT NULL DEFAULT 'Operational',
     cash_level      NUMERIC(5,2) NOT NULL DEFAULT 100.00 CHECK (cash_level BETWEEN 0 AND 100),
-    facility_id     INTEGER NOT NULL REFERENCES branches(id)
+    branch_id     INTEGER NOT NULL REFERENCES branches(id)
 );
 
 
