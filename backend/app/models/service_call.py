@@ -52,6 +52,7 @@ class ServiceCall(Base):
     atm_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("atms.id"),
+        ondelete="CASCADE",
         nullable=False
     )
 

@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,7 @@ from app.dependencies import get_db, get_current_user, require_role
 from app.models.enums import ATMStatus, UserRole
 from app.models.user import User
 from app.models.atm import ATM
-from app.schemas.atm import ATMCreate, ATMRead
+from app.schemas.atm import ATMCreate, ATMRead, ATMUpdate
 
 
 # Every request comes under /atms and has to do with ATMs
@@ -79,3 +79,42 @@ async def post_atm(
     await db.commit()
     await db.refresh(atm)
     return atm
+
+@router.patch("/{atm_id}", response_model=ATMRead)
+async def update_atm(
+    atm_id: int,
+    payload: ATMUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
+) -> ATM:
+    atm = await db.get(ATM, atm_id)
+
+    if atm is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"ATM '{atm_id}' not found"
+        )
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(atm, field, value)
+
+    await db.commit()
+    await db.refresh(atm)
+    return atm
+
+@router.delete("/{atm_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_atm(
+    atm_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
+) -> Response:
+    atm = await db.get(ATM, atm_id)
+
+    if atm is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"ATM '{atm_id}' not found"
+        )
+
+    await db.delete(atm)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

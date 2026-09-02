@@ -67,7 +67,8 @@ class ATM(Base):
     
     # Service calls associated with this ATM
     service_calls: Mapped[list["ServiceCall"]] = relationship(
-        back_populates="atm"
+        back_populates="atm",
+        passive_deletes=True
     )
 
     # Physical branch
