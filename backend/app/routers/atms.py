@@ -23,7 +23,7 @@ async def list_atms(
         default = None, # this makes it optional
         ge=0,
         le=100,
-        description="Only returns atms strictly below this cash level"
+        description="Only returns ATMs strictly below this cash level"
     ),
     db: AsyncSession = Depends(get_db),
     # day 5 addition here

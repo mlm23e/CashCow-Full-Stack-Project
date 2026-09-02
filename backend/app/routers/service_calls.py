@@ -4,9 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.service_call import DiscrepancyRead, ServicePriority, ServiceRead, ServiceStatusUpdate
-from app.dependencies import get_db, require_role, get_current_user
+from app.schemas.atm import ATMRead
 from app.models import ATM, UserRole, User, ServiceCall, ServicePriority, ServiceStatus
 
+from app.dependencies import get_db, require_role, get_current_user
 
 router = APIRouter(prefix="/service_calls", tags=["service_calls"])
 
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/service_calls", tags=["service_calls"])
 Finds co-location discrepancies between the ATM and User branch IDs, 
 with the option to return only the discrepancies found for service 
 calls of a certain priority
+(answers business question #2)
 """
 @router.get("/discrepancies", response_model=list[DiscrepancyRead])
 async def list_colocation_discrepancies(
@@ -73,3 +75,14 @@ async def update_status(
     await db.refresh(service)
 
     return service
+
+
+"""
+Determines the service call completion/failure broken down by ATM model
+(answers business question #3)
+"""
+@router.get("", response_model=list[ATMRead])
+async def atm_reliability_metric(
+    db : AsyncSession = Depends(get_db),
+    current_user : User = Depends(get_current_user)
+):
