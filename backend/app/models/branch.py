@@ -15,6 +15,7 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .atm import ATM
+    from .user import User
 
 
 class Branch(Base):
@@ -47,6 +48,11 @@ class Branch(Base):
 
     # ATMs physically located at this branch
     atms: Mapped[list["ATM"]] = relationship(back_populates="branch", passive_deletes=True)
+    # Users assigned to this branch
+    users : Mapped[list["User"]] = relationship(
+        back_populates="branch",
+        foreign_keys="User.branch_id"
+    )
 
     def __repr__(self) -> str:
         return (f" Branch(id={self.id}, "

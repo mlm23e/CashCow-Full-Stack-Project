@@ -112,11 +112,17 @@ async def update_user(
         raise HTTPException(status_code=404, detail=f"User '{user_id}' not found")
 
     updates = payload.model_dump(exclude_unset=True)
+    if "branch_id" in updates and updates["branch_id"] is not None:
+        branch = await db.get(Branch, updates["branch_id"])
+        if branch is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Branch '{updates['branch_id']}' not found"
+            )
     if "username" in updates:
         updates["username"] = updates["username"].strip().lower()
     if "password" in updates:
         updates["hashed_password"] = hash_password(updates.pop("password"))
-
     if "username" in updates:
         existing = await db.execute(
             select(User).where(

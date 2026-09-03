@@ -11,6 +11,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 from .enums import UserRole
 
+if TYPE_CHECKING:
+    from .branch import Branch
+
 class User(Base):
     __tablename__ = "users"
 
@@ -54,6 +57,11 @@ class User(Base):
         Integer,
         ForeignKey("branches.id", ondelete="SET NULL"),
         nullable=True
+    )
+
+    branch: Mapped["Branch | None"] = relationship(
+        back_populates="users",
+        foreign_keys=[branch_id]
     )
 
     def __repr__(self) -> str:

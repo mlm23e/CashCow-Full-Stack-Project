@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Response
 
 from sqlalchemy import case, func, select
@@ -212,8 +214,12 @@ async def update_service_status(
             detail=(f"Service Call '{service_id}' not found")
         )
 
-    if service.status.value != payload.status.value:
-        service.status = payload.status
+    if payload.status == ServiceStatus.COMPLETED:
+        service.completed_at = datetime.now()
+    elif service.status == ServiceStatus.COMPLETED:
+        service.completed_at = None
+
+    service.status = payload.status
 
     await db.commit()
     await db.refresh(service)

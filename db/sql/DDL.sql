@@ -51,8 +51,7 @@ CREATE TABLE users (
     first_name      VARCHAR(100) NOT NULL,
     last_name       VARCHAR(100) NOT NULL,
     role            user_role NOT NULL,
-    branch_id       INTEGER,
-    is_active       BOOLEAN NOT NULL DEFAULT TRUE
+    branch_id       INTEGER
 );
 
 CREATE UNIQUE INDEX users_username_lower_unique

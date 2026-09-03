@@ -2,6 +2,7 @@
 CashCow Command Center
 Pydantic v2 Schema for ServiceCall resource
 """
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,6 +25,7 @@ class ServiceRead(BaseModel):
     status : ServiceStatus
     atm_id : int 
     technician_id : int | None
+    completed_at : datetime | None
     model_config = ConfigDict(from_attributes=True)
 
 class DiscrepancyRead(BaseModel):

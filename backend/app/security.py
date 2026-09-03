@@ -1,11 +1,20 @@
+"""
+CashCow Command Center
+SECRET_KEY: it follows the same environment-variable-with-fallback pattern that we saw on Day 3's DATABASE_URL
+
+We will not be committing a real secret key here if this were a real project being pushed to production 
+(this would not be a secure place to put it).
+"""
 import os
 from datetime import timedelta, datetime, timezone
 
 import bcrypt
 import jwt
 
+from app.config import settings
+
 # security constants and helper functions for password hashing and JWT token management
-SECRET_KEY = os.environ.get("SECRET_KEY", "<replace-this-with-a-real-secret-key>")
+SECRET_KEY = settings.secret_key
 
 # define our algorithm for signing the JWT (JSON Web Tokens) tokens
 # there are many algorithms to choose from, we will be choosing HS256 (this is a common choice for symmetric signing)
@@ -25,7 +34,10 @@ def hash_password(plain : str)-> str:
 # this takes a hashed password and plain password as input, then checks to see if the plaintext 
 # password matches the hashed password
 def verify_password(hashed : str, plain : str)-> bool:
-    return bcrypt.checkpw(hashed_password= hashed.encode("utf-8"), password = plain.encode("utf-8"))
+    return bcrypt.checkpw(
+        password = plain.encode("utf-8"),
+        hashed_password= hashed.encode("utf-8")
+    )
 
 
 # creation of the JWT
