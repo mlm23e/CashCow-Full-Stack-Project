@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
-from sqlalchemy import select
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.branch import Branch
-from app.models.enums import UserRole
+from app.models.enums import UserRole, ATMStatus
 from app.models.user import User
+from app.models.atm import ATM
 from app.dependencies import get_db, get_current_user, require_role
-from app.schemas.branch import BranchRead, BranchCreate, BranchUpdate
+from app.schemas.branch import BranchRead, BranchCreate, BranchUpdate, MaintenanceFlagRead
 
 router = APIRouter(prefix="/branches", tags=["branches"])
 
@@ -39,6 +40,33 @@ async def post_branch(
     await db.commit()
     await db.refresh(branch)
     return branch
+
+@router.get("/maintenance-flags", response_model = list[MaintenanceFlagRead])
+async def branches_with_maintenance_flags(
+    db : AsyncSession = Depends(get_db),
+    _ : User = Depends(get_current_user)
+)->list[MaintenanceFlagRead]:
+    atm_total = func.count(ATM.id)
+    maintenance_atms = func.sum(
+        case((ATM.status == ATMStatus.MAINTENANCE, 1), else_=0)
+    )
+    statement = (
+        select(
+            Branch.id,
+            Branch.name,
+            Branch.location_region,
+            atm_total.label("atm_total"),
+            maintenance_atms.label("maintenance_atms"),
+            (maintenance_atms * 100.0 / atm_total).label("maintenance_rate")
+        )
+        .join(ATM, ATM.branch_id == Branch.id)
+        .group_by(Branch.id, Branch.name, Branch.location_region)
+        .having(maintenance_atms * 100 > atm_total * 30)
+        .order_by(Branch.id)
+    )
+    result = await db.execute(statement)
+    return [MaintenanceFlagRead(**row) for row in result.mappings().all()]
+
 
 @router.get("/{branch_id}", response_model=BranchRead)
 async def get_branch_by_id(

@@ -24,14 +24,18 @@ class UserUpdate(BaseModel):
     password : str | None = Field(default=None, min_length=8)
     role : UserRole | None = None
     branch_id : int | None = None
-    is_active : bool | None = None
 
 # We are NOT adding the password to the UserRead schema since we 
 # do not want to expose the hashed password in our API responses
 class UserRead(UserBase):
     id : int
-    is_active : bool
     model_config = ConfigDict(from_attributes=True)
+
+class TechnicianActiveCallsRead(BaseModel):
+    technician_id: int
+    first_name: str
+    last_name: str
+    active_call_count: int
 
 class Token(BaseModel):
     access_token : str

@@ -50,11 +50,6 @@ class User(Base):
         nullable=False
     )
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True
-    )
-
     branch_id : Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("branches.id", ondelete="SET NULL"),

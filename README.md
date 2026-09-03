@@ -21,8 +21,8 @@ The new system must allow operations admins and field technicians to easily answ
 (This is satisfied in `backend/app/routers/atm.py` by the `ATM` query parameter `max_cash`).
 * **Co-Location Discrepancy:** *How many ATMs are assigned to field technicians who are NOT co-located at the same physical branch?* (This is satisfied in `backend/app/routers/service_calls.py` by the route for `/service_calls/discrepancies`)
 * **Reliability Metrics:** *What is the service call completion/failure ratio broken down by ATM model?* (This is satisfied in `backend/app/routers/service_calls.py` by the route `/service_calls/reliability`)
-* **Maintenance Flags:** *Which branches have more than 30% of their ATMs currently flagged for maintenance?*
-* **Reporting Lines:** *How many technicians reporting to a specific Regional Operations Supervisor have active service calls assigned to them?*
+* **Maintenance Flags:** *Which branches have more than 30% of their ATMs currently flagged for maintenance?* (This is satisfied in `backend/app/routers/branches.py` by the route `/branches/maintenance-flags`)
+* **Reporting Lines:** *How many technicians reporting to a specific Regional Operations Supervisor have active service calls assigned to them?* (This is satisfied in `backend/app/routers/users.py` by the route `/active-calls/{supervisor_id}`)
 
 ---
 
@@ -56,7 +56,7 @@ The new system must allow operations admins and field technicians to easily answ
 ### Entity Specifications
 
 1. **Branches:** Physical sites housing ATM pools (`id`, `name`, `location_region`, `capacity`, `supervisor_id`).
-2. **ATMs:** Individual cash machine units (`id`, `serial_number`, `model`, `status`: *Operational* | *Low-Cash* | *Maintenance* | *Offline*, `cash_level`, `facility_id`).
+2. **ATMs:** Individual cash machine units (`id`, `serial_number`, `model`, `status`: *Operational* | *Maintenance* | *Offline*, `cash_level`, `facility_id`).
 3. **Service Calls:** Refill/repair tasks assigned to ATMs (`id`, `title`, `priority`: *Low* | *Medium* | *Critical*, `status`: *Pending* | *In-Progress* | *Completed* | *Failed*, `atm_id`, `technician_id`).
 4. **Diagnostic Reports:** Maintenance attachments and inspection files (`id`, `service_call_id`, `file_url`, `notes`, `created_at`).
 
@@ -126,7 +126,7 @@ cashcow/
 -------------------------------------------------------------------------------------------------
 ## 7. Deliverables & Day 13 Showcase Expectations
 
-By the conclusion of the workshop, participants must present a working deployment during the Day 13 final showcase. Each participant will have a **10-minute time slot** to present their solution.
+By the conclusion of the workshop, participants must present a working deployment during the Day 13 final showcase. Each participant will have a **5-minute time slot** to present their solution.
 
 ### Showcase Evaluation Criteria
 

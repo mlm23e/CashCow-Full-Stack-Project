@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
+from decimal import Decimal
 
 class BranchBase(BaseModel):
     name : str = Field(min_length=1, max_length=150)
@@ -18,4 +19,11 @@ class BranchUpdate(BranchBase):
     location_region : str | None = Field(default=None, min_length=1, max_length=100)
     capacity : int | None = None
     supervisor_id : int | None = None
+
+class MaintenanceFlagRead(BaseModel):
+    id : int
+    name : str
+    atm_total : int
+    maintenance_atms : int
+    maintenance_rate : float
     

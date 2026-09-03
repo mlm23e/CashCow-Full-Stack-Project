@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Response
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -219,3 +219,22 @@ async def update_service_status(
     await db.refresh(service)
 
     return service
+
+"""
+Deletes a ServiceCall
+"""
+@router.delete("/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_service_call(
+    service_id : int,
+    db : AsyncSession = Depends(get_db),
+    _ : UserRole = Depends(require_role)
+)-> Response:
+    service = await db.get(ServiceCall, service_id)
+    if service is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(f"Service Call '{service_id}' not found")
+        )
+    await db.delete(service)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
