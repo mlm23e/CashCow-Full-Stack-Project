@@ -1,9 +1,17 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.service_call import DiscrepancyRead, ServicePriority, ServiceRead, ServiceStatusUpdate
+from app.schemas.service_call import (
+    ATMReliabilityRead,
+    DiscrepancyRead,
+    ServiceCreate,
+    ServicePriority,
+    ServiceRead,
+    ServiceUpdate,
+    ServiceStatusUpdate,
+)
 from app.schemas.atm import ATMRead
 from app.models import ATM, UserRole, User, ServiceCall, ServicePriority, ServiceStatus
 
@@ -11,6 +19,100 @@ from app.dependencies import get_db, require_role, get_current_user
 
 router = APIRouter(prefix="/service_calls", tags=["service_calls"])
 
+
+"""
+Creates a ServiceCall object
+"""
+@router.post("", response_model=ServiceRead, status_code=status.HTTP_201_CREATED)
+async def post_service_call(
+    payload: ServiceCreate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_role(UserRole.OPERATIONS_ADMIN, UserRole.FIELD_TECHNICIAN))
+)->ServiceCall:
+    atm = await db.get(ATM, payload.atm_id)
+    if atm is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail = (f"ATM '{payload.atm_id}' not found")
+        )
+
+    if payload.technician_id is not None:
+        user = await db.get(User, payload.technician_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=(f"User '{payload.technician_id}' not found")
+            )
+
+    service = ServiceCall(**payload.model_dump())
+    db.add(service)
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+"""
+Reads ALL ServiceCalls
+"""
+@router.get("", response_model=list[ServiceRead])
+async def list_service_calls(
+    db : AsyncSession = Depends(get_db),
+    _ : User = Depends(get_current_user)
+)->list[ServiceCall]:
+    statement = select(ServiceCall).order_by(ServiceCall.id)
+    result = await db.execute(statement)
+    return list(result.scalars().all())
+
+"""
+Determines the service call completion/failure broken down by ATM model
+(answers business question #3)
+"""
+@router.get("/reliability", response_model=list[ATMReliabilityRead])
+async def atm_reliability_metric(
+    db : AsyncSession = Depends(get_db),
+    _ : User = Depends(get_current_user)
+) -> list[ATMReliabilityRead]:
+    statement = (
+        select(
+            ATM.model.label("model"),
+            func.count(ServiceCall.id).label("total_calls"),
+            func.sum(
+                case((ServiceCall.status == ServiceStatus.COMPLETED, 1), else_=0)
+            ).label("completed_calls"),
+            func.sum(
+                case((ServiceCall.status == ServiceStatus.FAILED, 1), else_=0)
+            ).label("failed_calls"),
+        )
+        .join(ServiceCall, ServiceCall.atm_id == ATM.id)
+        .group_by(ATM.model)
+        .order_by(ATM.model)
+    )
+
+    result = await db.execute(statement)
+    metrics = []
+
+    for row in result.mappings().all():
+        completed_calls = int(row["completed_calls"] or 0)
+        failed_calls = int(row["failed_calls"] or 0)
+        resolved_calls = completed_calls + failed_calls
+        completion_rate = (
+            completed_calls / resolved_calls * 100 if resolved_calls else 0
+        )
+        failure_rate = (
+            failed_calls / resolved_calls * 100 if resolved_calls else 0
+        )
+
+        metrics.append(
+            ATMReliabilityRead(
+                model=row["model"],
+                total_calls=int(row["total_calls"]),
+                completed_calls=completed_calls,
+                failed_calls=failed_calls,
+                completion_rate=completion_rate,
+                failure_rate=failure_rate,
+            )
+        )
+
+    return metrics
 
 """
 Finds co-location discrepancies between the ATM and User branch IDs, 
@@ -30,10 +132,10 @@ async def list_colocation_discrepancies(
     # Answers business question #2 (find colocation discrepancies between ATM and Technician facility_id)
     statement = (
         select(
-            ServiceCall.id.label("service_call_id"), 
+            ServiceCall.id.label("service_id"), 
             ServiceCall.title, 
             ATM.branch_id.label("atm_branch_id"), 
-            User.branch_id.label("service_branch_id")
+            User.branch_id.label("technician_branch_id")
         )
         .join(ATM, ATM.id == ServiceCall.atm_id)
         .join(User, User.id == ServiceCall.technician_id)
@@ -48,16 +150,58 @@ async def list_colocation_discrepancies(
     result = await db.execute(statement)
     return [dict(row) for row in result.mappings().all()]
 
+"""
+Reads ServiceCall by its ID
+"""
+@router.get("/{service_id}", response_model=ServiceRead)
+async def get_service_call_by_id(
+    service_id : int,
+    db : AsyncSession = Depends(get_db),
+    _ : User = Depends(get_current_user)
+) -> ServiceCall:
+    service_call = await db.get(ServiceCall, service_id)
+    if service_call is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(f"ServiceCall '{service_id}' not found")
+        )
+    return service_call
+
+
+"""
+Updates a ServiceCall
+"""
+@router.patch("/{service_id}", response_model=ServiceRead)
+async def update_service(
+    service_id : int,
+    payload : ServiceUpdate, 
+    db : AsyncSession = Depends(get_db),
+    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
+) -> ServiceCall:
+    service_call = await db.get(ServiceCall, service_id)
+
+    if service_call is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(f"ServiceCall '{service_id}' not found")
+        )
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(service_call, field, value)
+
+    await db.commit()
+    await db.refresh(service_call)
+    return service_call
+
 
 """
 Updates the ServiceCall status
 """
 @router.patch("/{service_id}/status", response_model= ServiceRead)
-async def update_status(
+async def update_service_status(
     service_id : int,
     payload : ServiceStatusUpdate,
     db : AsyncSession = Depends(get_db),
-    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN, UserRole.TECHNICIAN))
+    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN, UserRole.FIELD_TECHNICIAN))
 ) -> ServiceCall:
     
     service = await db.get(ServiceCall, service_id)
@@ -75,14 +219,3 @@ async def update_status(
     await db.refresh(service)
 
     return service
-
-
-"""
-Determines the service call completion/failure broken down by ATM model
-(answers business question #3)
-"""
-@router.get("", response_model=list[ATMRead])
-async def atm_reliability_metric(
-    db : AsyncSession = Depends(get_db),
-    current_user : User = Depends(get_current_user)
-):

@@ -46,7 +46,7 @@ class Branch(Base):
     )
 
     # ATMs physically located at this branch
-    atms: Mapped[list["ATM"]] = relationship(back_populates="branch")
+    atms: Mapped[list["ATM"]] = relationship(back_populates="branch", passive_deletes=True)
 
     def __repr__(self) -> str:
         return (f" Branch(id={self.id}, "

@@ -41,7 +41,7 @@ class User(Base):
         nullable=False
     )
 
-    role: Mapped[str] = mapped_column(
+    role: Mapped[UserRole] = mapped_column(
         SQLEnum(
             UserRole,
             name="user_role",
@@ -52,13 +52,12 @@ class User(Base):
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
-        nullable=False,
         default=True
     )
 
-    branch_id : Mapped[int] = mapped_column(
+    branch_id : Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("branches.id"),
+        ForeignKey("branches.id", ondelete="SET NULL"),
         nullable=True
     )
 

@@ -20,7 +20,7 @@ The new system must allow operations admins and field technicians to easily answ
 * **Low Cash Alert:** *Which active ATMs are operating below a 20% cash reserve across all branches?* 
 (This is satisfied in `backend/app/routers/atm.py` by the `ATM` query parameter `max_cash`).
 * **Co-Location Discrepancy:** *How many ATMs are assigned to field technicians who are NOT co-located at the same physical branch?* (This is satisfied in `backend/app/routers/service_calls.py` by the route for `/service_calls/discrepancies`)
-* **Reliability Metrics:** *What is the service call completion/failure ratio broken down by ATM model?*
+* **Reliability Metrics:** *What is the service call completion/failure ratio broken down by ATM model?* (This is satisfied in `backend/app/routers/service_calls.py` by the route `/service_calls/reliability`)
 * **Maintenance Flags:** *Which branches have more than 30% of their ATMs currently flagged for maintenance?*
 * **Reporting Lines:** *How many technicians reporting to a specific Regional Operations Supervisor have active service calls assigned to them?*
 

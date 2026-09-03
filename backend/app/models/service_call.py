@@ -51,14 +51,13 @@ class ServiceCall(Base):
 
     atm_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("atms.id"),
-        ondelete="CASCADE",
+        ForeignKey("atms.id", ondelete="CASCADE"),
         nullable=False
     )
 
     technician_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     started_at: Mapped[datetime | None] = mapped_column(DateTime)
 
@@ -69,7 +68,8 @@ class ServiceCall(Base):
 
     # Diagnostic reports attached to call
     diagnostic_reports: Mapped[list["DiagnosticReport"]] = relationship(
-        back_populates="service_call"
+        back_populates="service_call",
+        passive_deletes=True
     )
 
     def __repr__(self) -> str:

@@ -13,12 +13,11 @@
 -- ENUM TYPES
 -- ------------------------------------------------------------
 
--- CREATE TYPE user_role AS ENUM (
---     'Operations Admin',
---     'Technician',
---     'Auditor',
---     'Regional Supervisor'
--- );
+CREATE TYPE user_role AS ENUM (
+    'Operations Admin',
+    'Field Technician',
+    'Auditor'
+);
 
 CREATE TYPE atm_status AS ENUM (
     'Operational',
@@ -52,8 +51,12 @@ CREATE TABLE users (
     first_name      VARCHAR(100) NOT NULL,
     last_name       VARCHAR(100) NOT NULL,
     role            user_role NOT NULL,
+    branch_id       INTEGER,
     is_active       BOOLEAN NOT NULL DEFAULT TRUE
 );
+
+CREATE UNIQUE INDEX users_username_lower_unique
+    ON users (LOWER(username));
 
 
 -- ------------------------------------------------------------
@@ -90,7 +93,7 @@ CREATE TABLE atms (
     model           VARCHAR(100) NOT NULL,
     status          atm_status NOT NULL DEFAULT 'Operational',
     cash_level      NUMERIC(5,2) NOT NULL DEFAULT 100.00 CHECK (cash_level BETWEEN 0 AND 100),
-    branch_id     INTEGER NOT NULL REFERENCES branches(id)
+    branch_id     INTEGER NOT NULL REFERENCES branches(id) ON DELETE CASCADE
 );
 
 
@@ -103,7 +106,7 @@ CREATE TABLE service_calls (
     title           VARCHAR(255) NOT NULL,
     priority        service_priority NOT NULL,
     status          service_status NOT NULL DEFAULT 'Pending',
-    atm_id          INTEGER NOT NULL REFERENCES atms(id),
+    atm_id          INTEGER NOT NULL REFERENCES atms(id) ON DELETE CASCADE,
     technician_id   INTEGER REFERENCES users(id),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
     started_at      TIMESTAMP,
@@ -121,7 +124,7 @@ CREATE TABLE service_calls (
 
 CREATE TABLE diagnostic_reports (
     id              SERIAL PRIMARY KEY,
-    service_call_id INTEGER NOT NULL REFERENCES service_calls(id),
+    service_call_id INTEGER NOT NULL REFERENCES service_calls(id) ON DELETE CASCADE,
     file_url        TEXT NOT NULL,
     notes           TEXT,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
@@ -134,10 +137,6 @@ CREATE TABLE diagnostic_reports (
 -- ------------------------------------------------------------
 -- INDEXES
 -- ------------------------------------------------------------
-
--- Branch / ATM lookups
-CREATE INDEX idx_atms_facility_id
-    ON atms(facility_id);
 
 CREATE INDEX idx_atms_status
     ON atms(status);
@@ -174,40 +173,3 @@ CREATE INDEX idx_users_branch_id
 
 CREATE INDEX idx_users_role
     ON users(role);
-
-
--- ------------------------------------------------------------
--- updated_at trigger
--- ------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER trg_users_updated_at
-BEFORE UPDATE ON users
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
-
-
-CREATE TRIGGER trg_branches_updated_at
-BEFORE UPDATE ON branches
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
-
-
-CREATE TRIGGER trg_atms_updated_at
-BEFORE UPDATE ON atms
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
-
-
-CREATE TRIGGER trg_service_calls_updated_at
-BEFORE UPDATE ON service_calls
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();

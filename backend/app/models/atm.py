@@ -10,8 +10,8 @@ from decimal import Decimal
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric, String, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base import Base
-from models.enums import ATMStatus
+from .base import Base
+from .enums import ATMStatus
 
 if TYPE_CHECKING:
     from .branch import Branch
@@ -44,7 +44,7 @@ class ATM(Base):
         nullable=False
     )
 
-    atm_status: Mapped[ATMStatus] = mapped_column(
+    status: Mapped[ATMStatus] = mapped_column(
         SQLEnum(
             ATMStatus,
             name = "atm_status",
@@ -61,7 +61,7 @@ class ATM(Base):
 
     branch_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("branches.id"),
+        ForeignKey("branches.id", ondelete="CASCADE"),
         nullable=False
     )
     

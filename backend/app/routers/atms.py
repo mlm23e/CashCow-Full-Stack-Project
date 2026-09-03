@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_db, get_current_user, require_role
 from app.models.enums import ATMStatus, UserRole
 from app.models.user import User
+from app.models.branch import Branch
 from app.models.atm import ATM
 from app.schemas.atm import ATMCreate, ATMRead, ATMUpdate
 
@@ -15,7 +16,9 @@ from app.schemas.atm import ATMCreate, ATMRead, ATMUpdate
 # Every request comes under /atms and has to do with ATMs
 router = APIRouter(prefix="/atms", tags=["atms"])
 
-# This decorator says this goes to "/atms" with nothing else and returns a list of ATMRead objects
+"""
+Reads ALL ATM objects
+"""
 @router.get("", response_model = list[ATMRead])
 async def list_atms(
     max_cash : Decimal | None = Query(
@@ -48,8 +51,33 @@ async def list_atms(
 
     return list(result.scalars().all())
 
-# Get a specific ATM by its id
-# GET /atms/{atm_id} -> atm_id is known as a PATH PARAMETER
+"""
+Creates an ATM object
+"""
+@router.post("", response_model=ATMRead, status_code=status.HTTP_201_CREATED)
+async def post_atm(
+    payload: ATMCreate, 
+    db : AsyncSession = Depends(get_db), 
+    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
+) -> ATM:
+    branch = await db.get(Branch, payload.branch_id)
+    if branch is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(f"Branch '{payload.branch_id}' not found")
+        )
+    # we received the payload as a ATMCreate object
+    # we need it as a ATM object to save with the ORM
+    atm = ATM(**payload.model_dump()) # this dumps the model into the ATM constructor
+    # the double-star (**) unpackages the model
+    db.add(atm)
+    await db.commit()
+    await db.refresh(atm)
+    return atm
+
+"""
+Reads an ATM object given its ID
+"""
 @router.get("/{atm_id}", response_model=ATMRead)
 async def get_atm(
     atm_id : int, 
@@ -65,21 +93,9 @@ async def get_atm(
         )
     return atm
 
-@router.post("", response_model=ATMRead, status_code=status.HTTP_201_CREATED)
-async def post_atm(
-    payload: ATMCreate, 
-    db : AsyncSession = Depends(get_db), 
-    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
-) -> ATM:
-    # we received the payload as a ATMCreate object
-    # we need it as a ATM object to save with the ORM
-    atm = ATM(**payload.model_dump) # this dumps the model into the ATM constructor
-    # the double-star (**) unpackages the model
-    db.add(atm)
-    await db.commit()
-    await db.refresh(atm)
-    return atm
-
+"""
+Updates an ATM object given its ID
+"""
 @router.patch("/{atm_id}", response_model=ATMRead)
 async def update_atm(
     atm_id: int,
@@ -101,6 +117,9 @@ async def update_atm(
     await db.refresh(atm)
     return atm
 
+"""
+Deletes an ATM object given its ID
+"""
 @router.delete("/{atm_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_atm(
     atm_id: int,

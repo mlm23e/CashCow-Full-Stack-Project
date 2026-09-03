@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db, require_role
@@ -22,43 +22,48 @@ async def login(
     db : AsyncSession = Depends(get_db)
 )-> Token:
     # our db call to select our user
-    result = await db.execute(select(User).where(User.username == form_data.username))
+    username = form_data.username.strip().lower()
+    result = await db.execute(select(User).where(func.lower(User.username) == username))
     user = result.scalar_one_or_none()
 
     if user is None or not verify_password(user.hashed_password, form_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
-            headers={"WWW-Authorization": "Bearer"}
+            headers={"WWW-Authenticate": "Bearer"}
         )
     # set our access token
     access_token = create_access_token(data={"sub": user.username, "role": user.role.value})
     return Token(access_token=access_token, token_type="bearer")
 
 # function to register our new user. this endpoint is protected by the require_role dependency, which
-# will require the user to have the FLEET_ADMIN role
+# will require the user to have the OPERATIONS_ADMIN role
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def register_user(
     payload : UserCreate,
     db : AsyncSession = Depends(get_db),
-    _ : User = Depends(require_role(UserRole.FLEET_ADMIN))
+    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
 )-> User:
     # can add other validation here (require certain characters in the password, etc.) if you want...
     # could also would add to database and front-end to get 3 layers of validation...
 
     
     # checking to see if username already exists in the database
-    existing = await db.execute(select(User).where(User.username == payload.username))
+    username = payload.username.strip().lower()
+    existing = await db.execute(select(User).where(func.lower(User.username) == username))
     if existing.scalar_one_or_none() is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            details=(f"Username {payload.username} is already taken")
+            detail=(f"Username {payload.username} is already taken")
         )
     # create a new User object with the provided username, hashed password, and UserRole
     user = User(
-        username=payload.username,
+        username=username,
         hashed_password=hash_password(payload.password),
-        role=payload.role
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        role=payload.role,
+        branch_id=payload.branch_id
     )
 
     # add the new user object to the db
