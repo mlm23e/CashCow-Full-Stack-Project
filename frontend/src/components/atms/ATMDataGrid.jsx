@@ -95,7 +95,9 @@ function ATMDataGrid({ onSuccess }) {
         atm.model?.toLowerCase().includes(term) ||
         String(atm.branch_id).includes(term);
 
-      const matchesStatus = statusFilter === 'All' || atm.status === statusFilter;
+      const matchesStatus = statusFilter === 'All' || 
+      atm.status?.toLowerCase() === statusFilter.toLowerCase();
+;
       return matchesSearch && matchesStatus;
     });
   }, [atms, searchTerm, statusFilter]);

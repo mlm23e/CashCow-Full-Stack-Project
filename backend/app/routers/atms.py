@@ -40,7 +40,7 @@ async def list_atms(
     # Includes optional query paramter for filtering base on cash level (business question #3)
 
     # Create our statement for the DB
-    statement = select(ATM).where(ATM.status != ATMStatus.OFFLINE)
+    statement = select(ATM)
 
     # check for max_cash query paramter
     if max_cash is not None:

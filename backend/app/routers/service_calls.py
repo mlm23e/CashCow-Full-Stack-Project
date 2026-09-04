@@ -180,7 +180,7 @@ async def update_service(
     service_id : int,
     payload : ServiceUpdate, 
     db : AsyncSession = Depends(get_db),
-    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN))
+    _ : User = Depends(require_role(UserRole.OPERATIONS_ADMIN, UserRole.FIELD_TECHNICIAN))
 ) -> ServiceCall:
     service_call = await db.get(ServiceCall, service_id)
 

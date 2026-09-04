@@ -35,7 +35,7 @@ export default function SupervisorLoadPanel({ supervisorId = 1 }) {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h7" sx={{ mb: 2 }}>
-        Supervisors with Active Service Calls
+        Technicians with Active Service Calls
       </Typography>
 
       {rows.length === 0 ? (
